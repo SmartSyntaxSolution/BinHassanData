@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "988731808518",
+    "project_id": "bin-hassan-data",
+    "storage_bucket": "bin-hassan-data.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:988731808518:android:0a8d9fbc12d0bb16a51c87",
+        "android_client_info": {
+          "package_name": "com.binhassandata"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAochOnZHSZvuuUK5LjokDjAjCve5PEBuc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

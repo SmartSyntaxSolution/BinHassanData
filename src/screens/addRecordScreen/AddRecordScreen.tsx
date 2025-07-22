@@ -35,10 +35,19 @@ const AddRecordScreen = () => {
     useFirestoreCollection('Workers', setWorkers);
     useFirestoreCollection('Categories', setCategories);
 
-    const workerOptions = workers.map(worker => ({
-        label: worker.name,
-        value: worker.name,
-    }));
+    // const workerOptions = workers.map(worker => ({
+    //     label: worker.name,
+    //     value: worker.name,
+    // }));
+
+    const workerOptions = [
+  { label: 'None', value: null }, // 👈 This adds the 'unselect' option
+  ...workers.map(worker => ({
+    label: worker.name,
+    value: worker.name,
+  })),
+];
+
 
     const categoryOptions = categories.map(category => ({
         label: category.name,

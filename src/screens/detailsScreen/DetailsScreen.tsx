@@ -24,13 +24,25 @@ const DetailsScreen = () => {
 
     const [workers, setWorkers] = useState<{ label: string; value: string }[]>([]);
 
+    // useFirestoreCollection('Workers', (docs: any[]) => {
+    //     const workerList = docs.map(doc => ({
+    //         label: doc.name,
+    //         value: doc.name,
+    //     }));
+    //     setWorkers(workerList);
+    // });
+
     useFirestoreCollection('Workers', (docs: any[]) => {
-        const workerList = docs.map(doc => ({
-            label: doc.name,
-            value: doc.name,
-        }));
-        setWorkers(workerList);
-    });
+  const workerList = [
+    { label: 'None', value: null }, // 👈 Default option
+    ...docs.map(doc => ({
+      label: doc.name,
+      value: doc.name,
+    })),
+  ];
+  setWorkers(workerList);
+});
+
 
     const handleSave = async () => {
         try {

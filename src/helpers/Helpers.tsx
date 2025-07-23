@@ -58,12 +58,15 @@
 // };
 
 
-import XLSX from 'xlsx';
-import RNFS from 'react-native-fs';
-import Share from 'react-native-share';
-import firestore from '@react-native-firebase/firestore';
-import { Alert } from 'react-native';
+// final code
+
+// import XLSX from 'xlsx';
+// import RNFS from 'react-native-fs';
+// import Share from 'react-native-share';
 // import firestore from '@react-native-firebase/firestore';
+// import { Alert } from 'react-native';
+
+
 
 // export const exportAndArchiveRecords = async (records: any[]) => {
 //   const deliveredRecords = records.filter(r => r.deliveryStatus === 'Delivered');
@@ -74,24 +77,20 @@ import { Alert } from 'react-native';
 //   }
 
 //   try {
-//     // 🔁 Group records by shop name
-//     const groupedRecords: { [key: string]: any[] } = {};
+//     // ✅ 1. SHOP-WISE DATA
+//     const shopMap: { [key: string]: any[] } = {};
 //     deliveredRecords.forEach(record => {
-//       const shop = record.category || 'Unknown Shop';
-//       if (!groupedRecords[shop]) groupedRecords[shop] = [];
-//       groupedRecords[shop].push(record);
+//       if (!shopMap[record.category]) {
+//         shopMap[record.category] = [];
+//       }
+//       shopMap[record.category].push(record);
 //     });
 
 //     const wsData: any[] = [];
-
-//     // 🏪 Add shop name as row, then its records
-//     Object.entries(groupedRecords).forEach(([shop, records]) => {
-//       wsData.push({}); // Empty row for spacing (optional)
-//       wsData.push({ OrderNumber: `${shop}` }); // 👈 shop name row
-//       wsData.push({}); // Empty row for spacing (optional)
-
-//       // Add records for this shop
-//       records.forEach(r => {
+//     for (const shop in shopMap) {
+//       wsData.push({});
+//       wsData.push({ OrderNumber: `${shop} Orders` });
+//       shopMap[shop].forEach(r => {
 //         wsData.push({
 //           OrderNumber: r.orderNumber,
 //           Category: r.category,
@@ -104,10 +103,51 @@ import { Alert } from 'react-native';
 //           Waistcoat: r.waistcoat,
 //         });
 //       });
+//       wsData.push({});
+//     }
 
-//       wsData.push({}); // Empty row after shop records (optional)
+//     // ✅ 2. WORKER-WISE DATA
+//     const workersSnapshot = await firestore().collection('Workers').get();
+//     const workerNames = workersSnapshot.docs.map(doc => doc.data().name);
+
+//     const workerRecordMap: { [key: string]: any[] } = {};
+
+//     workerNames.forEach(name => {
+//       workerRecordMap[name] = [];
 //     });
 
+//     for (const record of deliveredRecords) {
+//       const involvedWorkers = [record.pant, record.coat, record.waistcoat, record.cutBy];
+//       const uniqueInvolved = new Set(involvedWorkers);
+      
+//       for (const workerName of workerNames) {
+//         if (uniqueInvolved.has(workerName)) {
+//           // ✅ Same record multiple times for different involved workers
+//           workerRecordMap[workerName].push(record);
+//         }
+//       }
+//     }
+
+//     for (const worker in workerRecordMap) {
+//       if (workerRecordMap[worker].length === 0) continue;
+//       wsData.push({ OrderNumber: `${worker} Orders` });
+//       workerRecordMap[worker].forEach(r => {
+//         wsData.push({
+//           OrderNumber: r.orderNumber,
+//           Category: r.category,
+//           DeliveryDate: r.deliveryDate,
+//           Status: r.deliveryStatus,
+//           Description: r.description,
+//           CutBy: r.cutBy,
+//           Coat: r.coat,
+//           Pant: r.pant,
+//           Waistcoat: r.waistcoat,
+//         });
+//       });
+//       wsData.push({});
+//     }
+
+//     // ✅ Create Excel Sheet
 //     const wb = XLSX.utils.book_new();
 //     const ws = XLSX.utils.json_to_sheet(wsData);
 //     XLSX.utils.book_append_sheet(wb, ws, 'Delivered Records');
@@ -123,7 +163,7 @@ import { Alert } from 'react-native';
 //       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 //     });
 
-//     // ✅ Archive & delete
+//     // ✅ Archive in Firebase
 //     const batch = firestore().batch();
 //     deliveredRecords.forEach(record => {
 //       const completeRef = firestore().collection('CompleteRecordList').doc();
@@ -134,13 +174,17 @@ import { Alert } from 'react-native';
 //     });
 
 //     await batch.commit();
-//     Alert.alert('Success', 'Delivered records exported, archived, and deleted.');
+//     Alert.alert('Success', 'Delivered records exported, archived and deleted.');
 //   } catch (err) {
 //     console.error(err);
 //     Alert.alert('Error', 'Something went wrong during export.');
 //   }
 // };
 
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import Share from 'react-native-share';
+import firestore from '@react-native-firebase/firestore';
+import { Alert } from 'react-native';
 
 export const exportAndArchiveRecords = async (records: any[]) => {
   const deliveredRecords = records.filter(r => r.deliveryStatus === 'Delivered');
@@ -151,7 +195,6 @@ export const exportAndArchiveRecords = async (records: any[]) => {
   }
 
   try {
-    // ✅ 1. SHOP-WISE DATA
     const shopMap: { [key: string]: any[] } = {};
     deliveredRecords.forEach(record => {
       if (!shopMap[record.category]) {
@@ -160,32 +203,73 @@ export const exportAndArchiveRecords = async (records: any[]) => {
       shopMap[record.category].push(record);
     });
 
-    const wsData: any[] = [];
+    let htmlContent = `
+      <html>
+      <head>
+        <style>
+          h1 {
+            text-align: center;
+            color: #4A148C;
+          }
+          h2 {
+            text-align: center;
+            color: #0D47A1;
+            margin-top: 40px;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+          }
+          th, td {
+            border: 1px solid #999;
+            text-align: center;
+            padding: 8px;
+          }
+          .shop-table th {
+            background-color: #E3F2FD;
+            color: #0D47A1;
+          }
+          .shop-table td {
+            background-color: #F1F8E9;
+          }
+          .worker-table th {
+            background-color: #FCE4EC;
+            color: #880E4F;
+          }
+          .worker-table td {
+            background-color: #FFF3E0;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Delivered Records</h1>
+    `;
+
+    htmlContent += `<h1>Shops Data</h1>`;
     for (const shop in shopMap) {
-      wsData.push({});
-      wsData.push({ OrderNumber: `${shop} Orders` });
+      
+      htmlContent += `
+        <h2>${shop} Orders</h2>
+        <table class="shop-table">
+          <tr><th>Order Number</th><th>Description</th><th>Amount</th></tr>
+      `;
       shopMap[shop].forEach(r => {
-        wsData.push({
-          OrderNumber: r.orderNumber,
-          Category: r.category,
-          DeliveryDate: r.deliveryDate,
-          Status: r.deliveryStatus,
-          Description: r.description,
-          CutBy: r.cutBy,
-          Coat: r.coat,
-          Pant: r.pant,
-          Waistcoat: r.waistcoat,
-        });
+        htmlContent += `
+          <tr>
+            <td>${r.orderNumber}</td>
+            <td>${r.description}</td>
+            <td></td>
+          </tr>
+        `;
       });
-      wsData.push({});
+      htmlContent += `</table>`;
     }
 
-    // ✅ 2. WORKER-WISE DATA
     const workersSnapshot = await firestore().collection('Workers').get();
     const workerNames = workersSnapshot.docs.map(doc => doc.data().name);
 
     const workerRecordMap: { [key: string]: any[] } = {};
-
     workerNames.forEach(name => {
       workerRecordMap[name] = [];
     });
@@ -193,51 +277,50 @@ export const exportAndArchiveRecords = async (records: any[]) => {
     for (const record of deliveredRecords) {
       const involvedWorkers = [record.pant, record.coat, record.waistcoat, record.cutBy];
       const uniqueInvolved = new Set(involvedWorkers);
-      
+
       for (const workerName of workerNames) {
         if (uniqueInvolved.has(workerName)) {
-          // ✅ Same record multiple times for different involved workers
           workerRecordMap[workerName].push(record);
         }
       }
     }
 
+    htmlContent += `<h1>Workers Data</h1>`;
     for (const worker in workerRecordMap) {
       if (workerRecordMap[worker].length === 0) continue;
-      wsData.push({ OrderNumber: `${worker} Orders` });
+     
+      htmlContent += `
+        <h2>${worker} Orders</h2>
+        <table class="worker-table">
+          <tr><th>Order Number</th><th>Amount</th></tr>
+      `;
       workerRecordMap[worker].forEach(r => {
-        wsData.push({
-          OrderNumber: r.orderNumber,
-          Category: r.category,
-          DeliveryDate: r.deliveryDate,
-          Status: r.deliveryStatus,
-          Description: r.description,
-          CutBy: r.cutBy,
-          Coat: r.coat,
-          Pant: r.pant,
-          Waistcoat: r.waistcoat,
-        });
+        htmlContent += `
+          <tr>
+            <td>${r.orderNumber}</td>
+            <td></td>
+          </tr>
+        `;
       });
-      wsData.push({});
+      htmlContent += `</table>`;
     }
 
-    // ✅ Create Excel Sheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, 'Delivered Records');
+    htmlContent += `</body></html>`;
 
-    const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
-    const path = `${RNFS.DownloadDirectoryPath}/DeliveredRecords.xlsx`;
+    const options = {
+      html: htmlContent,
+      fileName: 'Delivered_Records',
+      directory: 'Download',
+    };
 
-    await RNFS.writeFile(path, wbout, 'base64');
+    const pdf = await RNHTMLtoPDF.convert(options);
 
     await Share.open({
-      title: 'Exported Delivered Records',
-      url: `file://${path}`,
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      title: 'Delivered Records PDF',
+      url: `file://${pdf.filePath}`,
+      type: 'application/pdf',
     });
 
-    // ✅ Archive in Firebase
     const batch = firestore().batch();
     deliveredRecords.forEach(record => {
       const completeRef = firestore().collection('CompleteRecordList').doc();
@@ -248,10 +331,12 @@ export const exportAndArchiveRecords = async (records: any[]) => {
     });
 
     await batch.commit();
-    Alert.alert('Success', 'Delivered records exported, archived and deleted.');
+    Alert.alert('Success', 'Delivered records exported as PDF, archived and deleted.');
   } catch (err) {
     console.error(err);
-    Alert.alert('Error', 'Something went wrong during export.');
+    Alert.alert('Error', 'Something went wrong during PDF export.');
   }
 };
+
+
 

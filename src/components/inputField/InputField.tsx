@@ -32,6 +32,7 @@ const InputField = ({
             <Text style={[styles.labelStyle, labelStyle]}>{label}</Text>
             <View style={styles.inputFieldMainView}>
                 <TextInput
+                    placeholderTextColor={"black"}
                     value={value}
                     onChangeText={onChangeText}
                     placeholder={placeHolder}
@@ -66,6 +67,7 @@ const styles = StyleSheet.create({
     labelStyle: {
         alignSelf: 'flex-start',
         fontSize: 18,
+        color:"black"
     },
     inputFieldMainView: {
         width: '100%',
@@ -77,6 +79,7 @@ const styles = StyleSheet.create({
     inputFieldStyle: {
         height: hp('6%'),
         borderRadius: 10,
+        color:"black",
         paddingLeft: '5%',
     },
     iconBox: {

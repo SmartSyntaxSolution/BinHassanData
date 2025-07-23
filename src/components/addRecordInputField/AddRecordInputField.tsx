@@ -19,6 +19,7 @@ const AddRecordInputField = ({ label, placeHolder, value, onChangeText, labelSty
                 style={styles.textInputStyle}
                 value={value}
                 placeholder={placeHolder}
+                placeholderTextColor={"black"}
                 onChangeText={onChangeText}
                 editable={editable}
             />
@@ -33,6 +34,7 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         marginTop: hp('2%'),
         fontSize: 16,
+        color:"gray",
         fontWeight: '600',
     },
     textInputStyle: {
@@ -41,6 +43,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         backgroundColor: COLORS.white,
         width: '100%',
+        color:"black",
         marginTop: hp('1%'),
         fontSize: 16,
     },

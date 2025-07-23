@@ -27,7 +27,7 @@ const DatePickerField = ({
                 style={styles.dateBox}
                 onPress={() => setOpen(true)}
             >
-                <Text>{date ? date.toLocaleDateString() : placeholder}</Text>
+                <Text style={{color:"black"}} >{date ? date.toLocaleDateString() : placeholder}</Text>
             </TouchableOpacity>
 
             <DatePicker
@@ -54,13 +54,15 @@ const styles = StyleSheet.create({
     },
     label: {
         fontWeight: 'bold',
+        
         marginBottom: 5,
-        color: COLORS.black,
+        color: "grey",
     },
     dateBox: {
         padding: 15,
         borderRadius: 5,
         width: '100%',
+        color: "black",
         backgroundColor: '#fff',
     },
 });

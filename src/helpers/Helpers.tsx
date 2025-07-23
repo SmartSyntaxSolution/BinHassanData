@@ -57,7 +57,6 @@
 //     }
 // };
 
-
 // final code
 
 // import XLSX from 'xlsx';
@@ -65,8 +64,6 @@
 // import Share from 'react-native-share';
 // import firestore from '@react-native-firebase/firestore';
 // import { Alert } from 'react-native';
-
-
 
 // export const exportAndArchiveRecords = async (records: any[]) => {
 //   const deliveredRecords = records.filter(r => r.deliveryStatus === 'Delivered');
@@ -119,7 +116,7 @@
 //     for (const record of deliveredRecords) {
 //       const involvedWorkers = [record.pant, record.coat, record.waistcoat, record.cutBy];
 //       const uniqueInvolved = new Set(involvedWorkers);
-      
+
 //       for (const workerName of workerNames) {
 //         if (uniqueInvolved.has(workerName)) {
 //           // ✅ Same record multiple times for different involved workers
@@ -187,7 +184,9 @@ import firestore from '@react-native-firebase/firestore';
 import { Alert } from 'react-native';
 
 export const exportAndArchiveRecords = async (records: any[]) => {
-  const deliveredRecords = records.filter(r => r.deliveryStatus === 'Delivered');
+  const deliveredRecords = records.filter(
+    r => r.deliveryStatus === 'Delivered',
+  );
 
   if (deliveredRecords.length === 0) {
     Alert.alert('No records', 'There are no Delivered records to export.');
@@ -210,6 +209,9 @@ export const exportAndArchiveRecords = async (records: any[]) => {
           h1 {
             text-align: center;
             color: #4A148C;
+          }
+          .page {
+              page-break-after: always;
           }
           h2 {
             text-align: center;
@@ -248,22 +250,23 @@ export const exportAndArchiveRecords = async (records: any[]) => {
 
     htmlContent += `<h1>Shops Data</h1>`;
     for (const shop in shopMap) {
-      
       htmlContent += `
-        <h2>${shop} Orders</h2>
-        <table class="shop-table">
-          <tr><th>Order Number</th><th>Description</th><th>Amount</th></tr>
-      `;
-      shopMap[shop].forEach(r => {
-        htmlContent += `
+            <div class="page">
+      <h2>${shop} Orders</h2>
+      <table class="shop-table">
+        <tr><th>Order Number</th><th>Description</th><th>Amount</th></tr>
+        ${shopMap[shop]
+          .map(
+            r => `
           <tr>
             <td>${r.orderNumber}</td>
             <td>${r.description}</td>
             <td></td>
-          </tr>
-        `;
-      });
-      htmlContent += `</table>`;
+          </tr>`,
+          )
+          .join('')}
+      </table>
+    </div>`;
     }
 
     const workersSnapshot = await firestore().collection('Workers').get();
@@ -275,7 +278,12 @@ export const exportAndArchiveRecords = async (records: any[]) => {
     });
 
     for (const record of deliveredRecords) {
-      const involvedWorkers = [record.pant, record.coat, record.waistcoat, record.cutBy];
+      const involvedWorkers = [
+        record.pant,
+        record.coat,
+        record.waistcoat,
+        record.cutBy,
+      ];
       const uniqueInvolved = new Set(involvedWorkers);
 
       for (const workerName of workerNames) {
@@ -288,21 +296,23 @@ export const exportAndArchiveRecords = async (records: any[]) => {
     htmlContent += `<h1>Workers Data</h1>`;
     for (const worker in workerRecordMap) {
       if (workerRecordMap[worker].length === 0) continue;
-     
       htmlContent += `
-        <h2>${worker} Orders</h2>
-        <table class="worker-table">
-          <tr><th>Order Number</th><th>Amount</th></tr>
-      `;
-      workerRecordMap[worker].forEach(r => {
-        htmlContent += `
+    <div class="page">
+      <h2>${worker} Orders</h2>
+      <table class="worker-table">
+        <tr><th>Order Number</th><th>Amount</th></tr>
+        ${workerRecordMap[worker]
+          .map(
+            r => `
           <tr>
             <td>${r.orderNumber}</td>
             <td></td>
-          </tr>
-        `;
-      });
-      htmlContent += `</table>`;
+          </tr>`,
+          )
+          .join('')}
+      </table>
+    </div>
+  `;
     }
 
     htmlContent += `</body></html>`;
@@ -326,17 +336,17 @@ export const exportAndArchiveRecords = async (records: any[]) => {
       const completeRef = firestore().collection('CompleteRecordList').doc();
       batch.set(completeRef, record);
 
-      const originalRef = firestore().collection('Records').doc(record.id);
-      batch.delete(originalRef);
+      // const originalRef = firestore().collection('Records').doc(record.id);
+      // batch.delete(originalRef);
     });
 
     await batch.commit();
-    Alert.alert('Success', 'Delivered records exported as PDF, archived and deleted.');
+    Alert.alert(
+      'Success',
+      'Delivered records exported as PDF, archived and deleted.',
+    );
   } catch (err) {
     console.error(err);
     Alert.alert('Error', 'Something went wrong during PDF export.');
   }
 };
-
-
-

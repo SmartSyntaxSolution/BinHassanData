@@ -24,6 +24,7 @@ const AddWorkersModal = ({ modalVisible, setModalVisible, newWorkerName, setNewW
                 <View style={styles.modalContent}>
                     <Text style={styles.modalTitle}>{label}</Text>
                     <TextInput
+                        placeholderTextColor={"black"}
                         value={newWorkerName}
                         onChangeText={setNewWorkerName}
                         placeholder={placeHolder}
@@ -72,6 +73,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
+        color:"black",
         padding: 12,
         marginBottom: 12,
     },
